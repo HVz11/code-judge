@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-
 const express = require("express");
 const dotenv = require("dotenv");
 dotenv.config();
@@ -7,11 +6,24 @@ const { generateFile } = require("./generateFile");
 const { executeCpp } = require("./executeCpp");
 const { executePy } = require("./executePy");
 const cors = require("cors");
+const mongoose = require("mongoose");
+const Problem = require("../src/models/Problem");
 
 const app = express();
 
 app.use(express.json());
 app.use(cors());
+
+const DB = process.env.MONGODB_URL;
+mongoose
+  .connect(DB)
+  .then(() => {
+    console.log("Database connected.");
+  })
+  .catch((err: any) => {
+    console.log("Database error");
+    console.log(err);
+  });
 
 app.post("/run", async (req: Request, res: Response) => {
   let { language = "cpp", code } = req.body as any;
@@ -45,6 +57,44 @@ app.post("/run", async (req: Request, res: Response) => {
     return res.json({ filepath, output });
   } catch (err) {
     res.status(500).json({ err });
+  }
+});
+
+app.post("/add", async (req: Request, res: Response) => {
+  const { testcase, detail } = req.body;
+
+  if (!testcase || !detail) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  const data = { ...detail, testcase: [...testcase] };
+
+  try {
+    const newProblem = new Problem(data);
+
+    const saved = await newProblem.save();
+
+    return res.status(201).json(saved);
+  } catch (error) {
+    return res.status(500).json(error);
+  }
+});
+
+app.get("/problems", async (req: Request, res: Response) => {
+  try {
+    const data = await Problem.find();
+    return res.status(200).json(data);
+  } catch (error) {
+    return res.status(500).json(error);
+  }
+});
+
+app.get("/problems/:id", async (req: Request, res: Response) => {
+  try {
+    const data = await Problem.findById(req.params.id);
+    return res.status(200).json(data);
+  } catch (error) {
+    return res.status(500).json(error);
   }
 });
 

@@ -1,13 +1,32 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import Editor from "../components/Editor";
+// import MarkdownEditor from "@uiw/react-markdown-editor";
+import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
+import { asyncSingleProblemGet } from "../store/ProblemSlice";
+import { RootState } from "../store/store";
 
 function ProblemPage() {
     const [bottomDrawer, setBottomDrawer] = useState("input");
     const [verdict, setVerdict] = useState("tle");
+    const dispatch = useDispatch();
+    const problem = useSelector(
+        (state: RootState) => state.problem.singleProblem
+    );
+    const location = useLocation().pathname.split("/")[2];
+
+    useEffect(() => {
+        dispatch(asyncSingleProblemGet(location) as any);
+    }, []);
+
 
     return (
         <div className="flex">
             <div className="flex-grow h-screen overflow-y-auto sc1 problemPage p-2 px-4">
+                {/* <MDEditor.Markdown
+          source={problem?.statement}
+        /> */}
+                <h1 className="text-3xl py-3 border-b capitalize">{problem?.title}</h1>
                 <p>
                     Lorem ipsum dolor sit amet consectetur adipisicing elit. Suscipit sunt
                     earum vel consequatur officiis perferendis accusantium, reiciendis

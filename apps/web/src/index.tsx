@@ -7,6 +7,7 @@ import { NextUIProvider } from '@nextui-org/react';
 import { BrowserRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import store from './store/store';
+import { Toaster } from 'react-hot-toast';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -17,6 +18,7 @@ root.render(
       <BrowserRouter>
         <NextUIProvider>
           <App />
+          <Toaster />
         </NextUIProvider>
       </BrowserRouter>
     </Provider>

@@ -1,11 +1,15 @@
 import MarkdownEditor from "@uiw/react-markdown-editor";
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import TestcaseModel from "../components/TestcaseModel";
 import TestcaseContainer from "../components/TestcaseContainer";
+import toast from "react-hot-toast";
+import { asyncProblemAdd } from "../store/ProblemSlice";
+import { RootState } from "../store/store";
+import { useDispatch, useSelector } from "react-redux";
 export default function AddProblem() {
     const [problemDetail, setProblemDetail] = useState({
         slug: "",
-        name: "",
+        title: "",
         desc: "",
         statement: "",
         input: "",
@@ -13,14 +17,12 @@ export default function AddProblem() {
         constraints: "",
     })
 
+    const testcase = useSelector((state: RootState) => state.problem.testcase);
+    const loading = useSelector((state: RootState) => state.problem.loading);
+    const dispatch = useDispatch();
+
     const handleAdd = async () => {
-        await fetch('http://localhost:5000/add', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(problemDetail)
-        })
+        dispatch(asyncProblemAdd({ detail: problemDetail, testcase }) as any);
     }
 
     return (
@@ -47,9 +49,9 @@ export default function AddProblem() {
                     <div className="flex items-start">
                         <p className="w-48 min-w-fit">Problem Name</p>
                         <input
-                            value={problemDetail.name}
+                            value={problemDetail.title}
                             onChange={(e) =>
-                                setProblemDetail({ ...problemDetail, name: e.target.value })
+                                setProblemDetail({ ...problemDetail, title: e.target.value })
                             }
                             type="text"
                             className="flex-grow outline-none border-2 border-gray-400 p-2 rounded-sm shadow"
@@ -124,10 +126,21 @@ export default function AddProblem() {
                 </div>
             </div>
             <div className="sticky bottom-0 flex items-center justify-end p-4 z-50 border shadow bg-[whitesmoke] space-x-4">
-                <TestcaseModel />
-                <button className="outline-none border shadow bg-slate-600 text-gray-200 rounded-sm font-mono font-semibold px-5 py-2" onClick={handleAdd}>
-                    Proceed
-                </button>
+            {loading ? (
+          <div className="mr-10">
+            <Loading type="points" />
+          </div>
+        ) : (
+          <>
+            <TestcaseModel />
+            <button
+              className="outline-none border shadow bg-slate-600 text-gray-200 rounded-sm font-mono font-semibold px-5 py-2"
+              onClick={handleAdd}
+            >
+              Proceed
+            </button>
+          </>
+        )}
             </div>
         </>
     );
