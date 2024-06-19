@@ -91,15 +91,14 @@
   -ms-overflow-style: none !important;
 }
 
-.w-md-editor-text-input::-webkit-scrollbar {
+.w-md-editor-text-input::-webkit-scrollbar,
+.textarea ::-webkit-scrollbar {
   /* WebKit */
   width: 0 !important;
   height: 0 !important;
 }
 
-.w-md-editor ul{
+.w-md-editor ul {
   list-style-type: disc !important;
   font-family: "Mukta", sans-serif !important;
 }
-
-

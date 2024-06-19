@@ -7,11 +7,17 @@ import "codemirror/addon/edit/closetag";
 import "codemirror/addon/edit/closebrackets";
 import "codemirror/lib/codemirror.css";
 import stub from "../codeStudio";
+import { useDispatch } from "react-redux";
+import { setCurrentCode, setCurrentLang } from "../store/CodeSlice";
+import { useLocation } from "react-router-dom";
+
 
 export default function Editor() {
   const EditorRef = useRef<EditorFromTextArea>();
   const [language, setLanguage] = useState("cpp");
   const [stubs, setStubs] = useState(stub);
+  const dispatch = useDispatch();
+  const location = useLocation().pathname.split("/")[2];
 
   useEffect(() => {
     const localLanguage = localStorage.getItem("language");
@@ -21,16 +27,18 @@ export default function Editor() {
       setLanguage(localLanguage);
       curLang = localLanguage;
       localCode = JSON.parse(
-        localStorage.getItem(`${localLanguage}-code`) as string
+        localStorage.getItem(`${location}-${localLanguage}-code`) as string
       );
     } else
       localCode = JSON.parse(
-        localStorage.getItem(`${language}-code`) as string
+        localStorage.getItem(`${location}-${language}-code`) as string
       );
     const temp = { ...stubs };
     temp[curLang] = localCode || (stub[curLang] as string);
     setStubs(temp);
-  }, []);
+    dispatch(setCurrentLang(curLang));
+    dispatch(setCurrentCode(temp[curLang]));
+  }, [location]);
 
   useEffect(() => {
     const init = () => {
@@ -45,10 +53,12 @@ export default function Editor() {
           language === "cpp"
             ? "text/x-c++src"
             : language === "c"
-            ? "text/x-csrc"
-            : "text/x-python",
+              ? "text/x-csrc"
+              : "text/x-python",
         theme: "idea",
-        autoCloseTags: true,
+        tabSize: 2,
+        tabindex: 2,
+        indentWithTabs: true,
         autoCloseBrackets: true,
         lineNumbers: true,
       });
@@ -57,7 +67,7 @@ export default function Editor() {
 
       const tempLang = localStorage.getItem("language") || language;
       const tempStub =
-        JSON.parse(localStorage.getItem(`${tempLang}-code`) as string) ||
+        JSON.parse(localStorage.getItem(`${location}-${tempLang}-code`) as string) ||
         stub[tempLang];
 
       EditorRef.current?.getDoc().setValue(tempStub);
@@ -70,12 +80,13 @@ export default function Editor() {
       EditorRef.current?.on("change", (instance: EditorFromTextArea, changes: any) => {
         const code = instance.getValue();
         if (changes.origin !== "setValue") {
+          dispatch(setCurrentCode(code));
           const tempLang = localStorage.getItem('language') || 'cpp';
-          localStorage.setItem(`${tempLang}-code`, JSON.stringify(code));
+          localStorage.setItem(`${location}-${tempLang}-code`, JSON.stringify(code));
         }
       });
     }
-  }, [language, stubs]);
+  }, [language, stubs, dispatch, location]);
 
   return (
     <>
@@ -87,10 +98,12 @@ export default function Editor() {
             localStorage.setItem("language", e.target.value);
             const curStub =
               JSON.parse(
-                localStorage.getItem(`${e.target.value}-code`) as string
+                localStorage.getItem(`${location}-${e.target.value}-code`) as string
               ) || stubs[e.target.value];
 
             EditorRef.current?.getDoc().setValue(curStub);
+            dispatch(setCurrentLang(e.target.value));
+            dispatch(setCurrentCode(curStub));
           }}
           className="p-2 text-xs pr-4 rounded-md font-bold bg-transparent border border-gray-300"
         >

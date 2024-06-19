@@ -8,6 +8,7 @@ const { executePy } = require("./executePy");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const Problem = require("../src/models/Problem");
+const Job = require("./models/Job");
 
 const app = express();
 
@@ -26,37 +27,53 @@ mongoose
   });
 
 app.post("/run", async (req: Request, res: Response) => {
-  let { language = "cpp", code } = req.body as any;
-  //   code = `
-  // #include<bits/stdc++.h>
-  // using namespace std;
-  // int main() {
-  //     vector<int> v;
-  //     int n; cin>>n;
-  //     for(int i=0; i<n; i++) {
-  //         int x; cin>>x;
-  //         v.push_back(x);
-  //     }
-  //     for(int i=0; i<10000000; i++) {}
-  //     for(auto it: v) cout<<it<<" ";
-  // }
-  // `;
+  let { language = "cpp", code, userInput } = req.body as any;
 
   if (code === undefined || !code) {
     return res.status(400).json({ success: false, error: "Empty code body!" });
   }
 
   let output;
+  let job;
+
   try {
     // need to generate a c++ file with content from the request
     const filepath = await generateFile(language, code);
-    // we need to run the file and send the response
-    if (language === "cpp") output = await executeCpp(filepath);
-    else output = await executePy(filepath);
 
-    return res.json({ filepath, output });
+    job = await Job({ language, filepath }).save();
+    const jobId = job["_id"];
+    res.status(201).json({ success: true, jobId });
+    job["startedAt"] = new Date();
+    if (language === "cpp" || language === "c")
+      output = await executeCpp(filepath, userInput);
+    else output = await executePy(filepath, userInput);
+
+    job["completedAt"] = new Date();
+    job["status"] = "success";
+    job["output"] = output;
+
+    await job.save();
   } catch (err) {
-    res.status(500).json({ err });
+    job["completedAt"] = new Date();
+    job["status"] = "error";
+    job["output"] = err;
+    await job.save();
+    console.log(err);
+    res.status(500).json({ err, success: false });
+  }
+});
+
+app.get("/status/:id", async (req: Request, res: Response) => {
+  if (!req.params.id) {
+    return res.status(400).json("Missing required fields");
+  }
+
+  try {
+    const job = await Job.findById(req.params.id);
+
+    res.status(200).json({ job, success: true });
+  } catch (error) {
+    res.status(500).json({ error, success: false });
   }
 });
 
