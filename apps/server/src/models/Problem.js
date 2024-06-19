@@ -16,11 +16,9 @@ const ProblemSchema = new mongoose.Schema(
     },
     input: {
       type: String,
-      required: true,
     },
     output: {
       type: String,
-      required: true,
     },
     constraints: { type: String },
     statement: {
